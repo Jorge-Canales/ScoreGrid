@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Marcador</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .panel {
+            background: #16213e;
+            border: 2px solid #6c3bd4;
+            border-radius: 16px;
+            padding: 30px;
+            width: 450px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffb800;
+            margin-bottom: 25px;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .grupo {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #b4a7d6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .jugadores-inputs {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .jugadores-inputs input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .vs-text {
+            color: #8a8aad;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #2a2a4a;
+            border-radius: 10px;
+            background: #0f0f1a;
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #6c3bd4;
+            box-shadow: 0 0 15px rgba(108, 59, 212, 0.3);
+        }
+
+        .puntuaciones {
+            display: flex;
+            gap: 15px;
+        }
+
+        .puntuaciones input {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            width: 80px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #2a2a4a;
+            border-radius: 10px;
+            background: #0f0f1a;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: #6c3bd4;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #6c3bd4, #9b59b6);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 59, 212, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .estado {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #8a8aad;
+        }
+
+        .estado.conectado {
+            color: #4caf50;
+        }
+
+        .instrucciones {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #8a8aad;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>🎮 Panel de Control</h1>
+        
+        <div class="grupo">
+            <label>Jugadores</label>
+            <div class="jugadores-inputs">
+                <input type="text" id="jugador1" placeholder="Jugador 1" value="AndresFN">
+                <span class="vs-text">vs</span>
+                <input type="text" id="jugador2" placeholder="Jugador 2" value="Sisqui">
+            </div>
+        </div>
+
+        <div class="grupo">
+            <label>Puntuaciones</label>
+            <div class="puntuaciones">
+                <input type="number" id="puntuacion1" value="0" min="0" max="99">
+                <input type="number" id="puntuacion2" value="1" min="0" max="99">
+            </div>
+        </div>
+
+        <div class="grupo">
+            <label>Fase del torneo</label>
+            <select id="faseSelect">
+                <option value="Dieciseisavos de final">Dieciseisavos de final</option>
+                <option value="Octavos de final">Octavos de final</option>
+                <option value="Cuartos de final" selected>Cuartos de final</option>
+                <option value="Semifinal">Semifinal</option>
+                <option value="Final">Final</option>
+                <option value="Gran Final">Gran Final</option>
+            </select>
+        </div>
+
+        <button id="btnActualizar">Actualizar Marcador</button>
+
+        <div class="estado" id="estadoConexion">Conectando...</div>
+
+        <div class="instrucciones">
+            <strong>Instrucciones:</strong><br>
+            1. Ejecuta <code>node server.js</code> en la terminal<br>
+            2. En OBS, añade una fuente "Navegador" con URL:<br>
+            <code>http://localhost:3000/overlay.html</code><br>
+            3. Usa este panel para controlar el marcador
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const estadoEl = document.getElementById('estadoConexion');
+
+        socket.on('connect', () => {
+            estadoEl.textContent = 'Conectado - Los cambios se aplican al instante';
+            estadoEl.className = 'estado conectado';
+        });
+
+        socket.on('disconnect', () => {
+            estadoEl.textContent = 'Desconectado';
+            estadoEl.className = 'estado';
+        });
+
+        // Cargar estado inicial
+        socket.on('estadoInicial', (datos) => {
+            document.getElementById('jugador1').value = datos.jugador1;
+            document.getElementById('jugador2').value = datos.jugador2;
+            document.getElementById('puntuacion1').value = datos.puntuacion1;
+            document.getElementById('puntuacion2').value = datos.puntuacion2;
+            document.getElementById('faseSelect').value = datos.fase;
+        });
+
+        // Enviar actualización al hacer clic
+        document.getElementById('btnActualizar').addEventListener('click', () => {
+            const datos = {
+                jugador1: document.getElementById('jugador1').value || 'Jugador 1',
+                jugador2: document.getElementById('jugador2').value || 'Jugador 2',
+                puntuacion1: parseInt(document.getElementById('puntuacion1').value) || 0,
+                puntuacion2: parseInt(document.getElementById('puntuacion2').value) || 0,
+                fase: document.getElementById('faseSelect').value
+            };
+            socket.emit('actualizar', datos);
+        });
+
+        // También actualizar al presionar Enter en cualquier campo
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('btnActualizar').click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

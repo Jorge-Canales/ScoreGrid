@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcador Torneo - Overlay</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .marcador-container {
+            background: linear-gradient(180deg, rgba(20, 20, 40, 0.95) 0%, rgba(10, 10, 30, 0.95) 100%);
+            border: 3px solid #6c3bd4;
+            border-radius: 16px;
+            padding: 20px 40px;
+            min-width: 500px;
+            box-shadow: 0 0 30px rgba(108, 59, 212, 0.3), inset 0 0 20px rgba(108, 59, 212, 0.1);
+            text-align: center;
+        }
+
+        .jugadores {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .jugador {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+            min-width: 140px;
+            text-align: center;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        .puntuacion {
+            font-size: 36px;
+            font-weight: 900;
+            color: #ffb800;
+            text-shadow: 0 0 20px rgba(255, 184, 0, 0.6);
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .vs {
+            font-size: 20px;
+            font-weight: 700;
+            color: #8a8aad;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .separador {
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6c3bd4, transparent);
+            margin: 10px auto;
+        }
+
+        .fase {
+            font-size: 18px;
+            font-weight: 600;
+            color: #b4a7d6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px rgba(180, 167, 214, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="marcador-container">
+        <div class="jugadores">
+            <span class="jugador" id="jugador1">Jugador 1</span>
+            <span class="puntuacion" id="puntuacion1">0</span>
+            <span class="vs">vs.</span>
+            <span class="puntuacion" id="puntuacion2">0</span>
+            <span class="jugador" id="jugador2">Jugador 2</span>
+        </div>
+        <div class="separador"></div>
+        <div class="fase" id="fase">Cuartos de final</div>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        const jugador1 = document.getElementById('jugador1');
+        const jugador2 = document.getElementById('jugador2');
+        const puntuacion1 = document.getElementById('puntuacion1');
+        const puntuacion2 = document.getElementById('puntuacion2');
+        const fase = document.getElementById('fase');
+
+        // Recibir estado inicial
+        socket.on('estadoInicial', (datos) => {
+            actualizarMarcador(datos);
+        });
+
+        // Recibir actualizaciones
+        socket.on('estadoActualizado', (datos) => {
+            actualizarMarcador(datos);
+        });
+
+        function actualizarMarcador(datos) {
+            jugador1.textContent = datos.jugador1;
+            jugador2.textContent = datos.jugador2;
+            puntuacion1.textContent = datos.puntuacion1;
+            puntuacion2.textContent = datos.puntuacion2;
+            fase.textContent = datos.fase;
+        }
+    </script>
+</body>
+</html>
