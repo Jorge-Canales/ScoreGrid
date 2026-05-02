@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control - Marcador</title>
+    <title>ScoreGrid - Panel de Control</title>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <style>
         * {
@@ -24,19 +24,30 @@
 
         .panel {
             background: #16213e;
-            border: 2px solid #6c3bd4;
+            border: 2px solid #ffb800;
             border-radius: 16px;
             padding: 30px;
-            width: 450px;
+            width: 480px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
-        h1 {
+        .logo {
             text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo h1 {
             color: #ffb800;
-            margin-bottom: 25px;
-            font-size: 24px;
-            letter-spacing: 2px;
+            font-size: 32px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .logo span {
+            color: #8a8aad;
+            font-size: 12px;
+            letter-spacing: 5px;
             text-transform: uppercase;
         }
 
@@ -56,7 +67,7 @@
 
         .jugadores-inputs {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
         }
 
@@ -68,7 +79,7 @@
         .vs-text {
             color: #8a8aad;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         input {
@@ -84,20 +95,21 @@
         }
 
         input:focus {
-            border-color: #6c3bd4;
-            box-shadow: 0 0 15px rgba(108, 59, 212, 0.3);
+            border-color: #ffb800;
+            box-shadow: 0 0 15px rgba(255, 184, 0, 0.15);
         }
 
         .puntuaciones {
             display: flex;
-            gap: 15px;
+            gap: 12px;
+            align-items: center;
         }
 
         .puntuaciones input {
             text-align: center;
             font-size: 24px;
             font-weight: 700;
-            width: 80px;
+            width: 70px;
         }
 
         select {
@@ -110,18 +122,23 @@
             font-size: 16px;
             outline: none;
             cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238a8aad' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 40px;
         }
 
         select:focus {
-            border-color: #6c3bd4;
+            border-color: #ffb800;
         }
 
         button {
             width: 100%;
             padding: 14px;
             margin-top: 10px;
-            background: linear-gradient(135deg, #6c3bd4, #9b59b6);
-            color: #ffffff;
+            background: linear-gradient(135deg, #ffb800, #e09600);
+            color: #1a1a2e;
             border: none;
             border-radius: 10px;
             font-size: 18px;
@@ -134,7 +151,7 @@
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(108, 59, 212, 0.4);
+            box-shadow: 0 8px 25px rgba(255, 184, 0, 0.4);
         }
 
         button:active {
@@ -155,38 +172,61 @@
         .instrucciones {
             background: #0f0f1a;
             border-radius: 8px;
-            padding: 12px;
+            padding: 15px;
             margin-top: 20px;
             font-size: 12px;
             color: #8a8aad;
             line-height: 1.6;
         }
+
+        .instrucciones strong {
+            color: #ffb800;
+        }
+
+        code {
+            background: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #ffb800;
+        }
     </style>
 </head>
 <body>
     <div class="panel">
-        <h1>🎮 Panel de Control</h1>
+        <div class="logo">
+            <h1>ScoreGrid</h1>
+            <span>Panel de Control v1.0</span>
+        </div>
         
+        <div class="grupo">
+            <label>Nombre del Torneo</label>
+            <input type="text" id="torneo" placeholder="Nombre del torneo">
+        </div>
+
         <div class="grupo">
             <label>Jugadores</label>
             <div class="jugadores-inputs">
-                <input type="text" id="jugador1" placeholder="Jugador 1" value="AndresFN">
+                <input type="text" id="jugador1" placeholder="Jugador 1">
                 <span class="vs-text">vs</span>
-                <input type="text" id="jugador2" placeholder="Jugador 2" value="Sisqui">
+                <input type="text" id="jugador2" placeholder="Jugador 2">
             </div>
         </div>
 
         <div class="grupo">
             <label>Puntuaciones</label>
             <div class="puntuaciones">
-                <input type="number" id="puntuacion1" value="0" min="0" max="99">
-                <input type="number" id="puntuacion2" value="1" min="0" max="99">
+                <input type="number" id="puntuacion1" placeholder="0" min="0" max="99">
+                <span class="vs-text">—</span>
+                <input type="number" id="puntuacion2" placeholder="0" min="0" max="99">
             </div>
         </div>
 
         <div class="grupo">
             <label>Fase del torneo</label>
             <select id="faseSelect">
+                <option value=" ">Vacío</option>
+                <option value="Fase de grupos">Fase de grupos</option>
                 <option value="Dieciseisavos de final">Dieciseisavos de final</option>
                 <option value="Octavos de final">Octavos de final</option>
                 <option value="Cuartos de final" selected>Cuartos de final</option>
@@ -203,9 +243,10 @@
         <div class="instrucciones">
             <strong>Instrucciones:</strong><br>
             1. Ejecuta <code>node server.js</code> en la terminal<br>
-            2. En OBS, añade una fuente "Navegador" con URL:<br>
+            2. En OBS, añade una fuente <strong>"Navegador"</strong> con URL:<br>
             <code>http://localhost:3000/overlay.html</code><br>
-            3. Usa este panel para controlar el marcador
+            3. Usa este panel para controlar todo al instante<br>
+            4. Consejo: pon el overlay sobre un fondo oscuro
         </div>
     </div>
 
@@ -219,12 +260,13 @@
         });
 
         socket.on('disconnect', () => {
-            estadoEl.textContent = 'Desconectado';
+            estadoEl.textContent = '❌ Desconectado';
             estadoEl.className = 'estado';
         });
 
         // Cargar estado inicial
         socket.on('estadoInicial', (datos) => {
+            document.getElementById('torneo').value = datos.torneo || 'Nombre del Torneo';
             document.getElementById('jugador1').value = datos.jugador1;
             document.getElementById('jugador2').value = datos.jugador2;
             document.getElementById('puntuacion1').value = datos.puntuacion1;
@@ -235,6 +277,7 @@
         // Enviar actualización al hacer clic
         document.getElementById('btnActualizar').addEventListener('click', () => {
             const datos = {
+                torneo: document.getElementById('torneo').value || 'Nombre del Torneo',
                 jugador1: document.getElementById('jugador1').value || 'Jugador 1',
                 jugador2: document.getElementById('jugador2').value || 'Jugador 2',
                 puntuacion1: parseInt(document.getElementById('puntuacion1').value) || 0,

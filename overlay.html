@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marcador Torneo - Overlay</title>
+    <title>ScoreGrid - Overlay</title>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <style>
         * {
@@ -22,14 +22,46 @@
             overflow: hidden;
         }
 
-        .marcador-container {
-            background: linear-gradient(180deg, rgba(20, 20, 40, 0.95) 0%, rgba(10, 10, 30, 0.95) 100%);
-            border: 3px solid #6c3bd4;
-            border-radius: 16px;
-            padding: 20px 40px;
-            min-width: 500px;
-            box-shadow: 0 0 30px rgba(108, 59, 212, 0.3), inset 0 0 20px rgba(108, 59, 212, 0.1);
+        /*
+            .marcador-wrapper {
+            position: relative;
+            padding: 30px 50px 20px 50px;
+            min-width: 550px;
             text-align: center;
+            /* Degradado que se funde a transparente en los bordes 
+            background:
+                radial-gradient(ellipse at center, rgba(15, 15, 35, 0.95) 0%, rgba(15, 15, 35, 0.7) 50%, transparent 75%);
+            /* Sin bordes, sin border-radius visible, solo la máscara de degradado 
+        }
+        */
+        .marcador-wrapper {
+            position: relative;
+            padding: 30px 50px 20px 50px;
+            min-width: 550px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .marcador-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: -120px; /* Hace el fondo más grande que el contenedor */
+            z-index: -1;
+
+            background: rgba(15, 15, 35, 0.9);
+            border-radius: 50%; /* Forma elíptica */
+            filter: blur(80px); /* Suaviza los bordes */
+        }
+
+        .torneo {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffb800;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+            text-shadow: 0 0 15px rgba(255, 184, 0, 0.5);
+            opacity: 0.9;
         }
 
         .jugadores {
@@ -37,14 +69,14 @@
             align-items: center;
             justify-content: center;
             gap: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .jugador {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 700;
             color: #ffffff;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
             min-width: 140px;
             text-align: center;
             white-space: nowrap;
@@ -52,41 +84,44 @@
         }
 
         .puntuacion {
-            font-size: 36px;
+            font-size: 38px;
             font-weight: 900;
             color: #ffb800;
-            text-shadow: 0 0 20px rgba(255, 184, 0, 0.6);
+            text-shadow: 0 0 25px rgba(255, 184, 0, 0.7);
             min-width: 30px;
             text-align: center;
         }
 
         .vs {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #8a8aad;
             text-transform: uppercase;
             letter-spacing: 2px;
+            opacity: 0.8;
         }
 
         .separador {
-            width: 80%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #6c3bd4, transparent);
-            margin: 10px auto;
+            width: 70%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(180, 167, 214, 0.6), transparent);
+            margin: 8px auto;
         }
 
         .fase {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 600;
             color: #b4a7d6;
             text-transform: uppercase;
             letter-spacing: 3px;
-            text-shadow: 0 0 8px rgba(180, 167, 214, 0.4);
+            text-shadow: 0 0 10px rgba(180, 167, 214, 0.4);
+            opacity: 0.85;
         }
     </style>
 </head>
 <body>
-    <div class="marcador-container">
+    <div class="marcador-wrapper">
+        <div class="torneo" id="torneo">Nombre del Torneo</div>
         <div class="jugadores">
             <span class="jugador" id="jugador1">Jugador 1</span>
             <span class="puntuacion" id="puntuacion1">0</span>
@@ -101,6 +136,7 @@
     <script>
         const socket = io();
         
+        const torneo = document.getElementById('torneo');
         const jugador1 = document.getElementById('jugador1');
         const jugador2 = document.getElementById('jugador2');
         const puntuacion1 = document.getElementById('puntuacion1');
@@ -118,6 +154,7 @@
         });
 
         function actualizarMarcador(datos) {
+            torneo.textContent = datos.torneo;
             jugador1.textContent = datos.jugador1;
             jugador2.textContent = datos.jugador2;
             puntuacion1.textContent = datos.puntuacion1;

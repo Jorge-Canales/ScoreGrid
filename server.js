@@ -12,6 +12,7 @@ app.use(express.static(path.join(__dirname)));
 
 // Estado inicial del marcador
 let marcador = {
+    torneo: 'Nombre del Torneo',
     jugador1: 'Jugador 1',
     jugador2: 'Jugador 2',
     puntuacion1: 0,
@@ -36,7 +37,7 @@ io.on('connection', (socket) => {
 
 const PORT = 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`ScoreGrid corriendo en http://localhost:${PORT}`);
     console.log(`Overlay: http://localhost:${PORT}/overlay.html`);
-    console.log(`Controlador: http://localhost:${PORT}/controller.html`);
+    console.log(`Panel de control: http://localhost:${PORT}/controller.html`);
 });
