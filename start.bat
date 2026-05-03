@@ -10,5 +10,5 @@ REM Esperar a que arranque
 timeout /t 2 >nul
 
 REM Abrir en navegador (mejor localhost)
-start http://localhost:3000/controller.html
 start http://localhost:3000/overlay.html
+start http://localhost:3000/controller.html
