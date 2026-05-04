@@ -112,6 +112,17 @@
             width: 70px;
         }
 
+        /* Fila de dos selects lado a lado */
+        .fase-formato-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .fase-formato-row .grupo {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
         select {
             width: 100%;
             padding: 12px 15px;
@@ -198,11 +209,6 @@
             <h1>ScoreGrid</h1>
             <span>Panel de Control v1.0</span>
         </div>
-        
-        <div class="grupo">
-            <label>Nombre del Torneo</label>
-            <input type="text" id="torneo" placeholder="Nombre del torneo">
-        </div>
 
         <div class="grupo">
             <label>Jugadores</label>
@@ -222,18 +228,30 @@
             </div>
         </div>
 
-        <div class="grupo">
-            <label>Fase del torneo</label>
-            <select id="faseSelect">
-                <option value=" ">Vacío</option>
-                <option value="Fase de grupos">Fase de grupos</option>
-                <option value="Dieciseisavos de final">Dieciseisavos de final</option>
-                <option value="Octavos de final">Octavos de final</option>
-                <option value="Cuartos de final" selected>Cuartos de final</option>
-                <option value="Semifinal">Semifinal</option>
-                <option value="Final">Final</option>
-                <option value="Gran Final">Gran Final</option>
-            </select>
+        <div class="fase-formato-row">
+            <div class="grupo">
+                <label>Fase del torneo</label>
+                <select id="faseSelect">
+                    <option value=" ">Vacío</option>
+                    <option value="Fase de grupos">Fase de grupos</option>
+                    <option value="Dieciseisavos de final">Dieciseisavos de final</option>
+                    <option value="Octavos de final">Octavos de final</option>
+                    <option value="Cuartos de final" selected>Cuartos de final</option>
+                    <option value="Semifinal">Semifinal</option>
+                    <option value="Final">Final</option>
+                    <option value="Gran Final">Gran Final</option>
+                </select>
+            </div>
+
+            <div class="grupo">
+                <label>Formato</label>
+                <select id="formatoSelect">
+                    <option value="">— Ninguno —</option>
+                    <option value="Best of 1">Bo1</option>
+                    <option value="Best of 3" selected>Bo3</option>
+                    <option value="Best of 5">Bo5</option>
+                </select>
+            </div>
         </div>
 
         <button id="btnActualizar">Actualizar Marcador</button>
@@ -266,23 +284,25 @@
 
         // Cargar estado inicial
         socket.on('estadoInicial', (datos) => {
-            document.getElementById('torneo').value = datos.torneo || 'Nombre del Torneo';
             document.getElementById('jugador1').value = datos.jugador1;
             document.getElementById('jugador2').value = datos.jugador2;
             document.getElementById('puntuacion1').value = datos.puntuacion1;
             document.getElementById('puntuacion2').value = datos.puntuacion2;
             document.getElementById('faseSelect').value = datos.fase;
+            if (datos.formato !== undefined) {
+                document.getElementById('formatoSelect').value = datos.formato;
+            }
         });
 
         // Enviar actualización al hacer clic
         document.getElementById('btnActualizar').addEventListener('click', () => {
             const datos = {
-                torneo: document.getElementById('torneo').value || 'Nombre del Torneo',
-                jugador1: document.getElementById('jugador1').value || 'Jugador 1',
-                jugador2: document.getElementById('jugador2').value || 'Jugador 2',
+                jugador1:    document.getElementById('jugador1').value    || 'Jugador 1',
+                jugador2:    document.getElementById('jugador2').value    || 'Jugador 2',
                 puntuacion1: parseInt(document.getElementById('puntuacion1').value) || 0,
                 puntuacion2: parseInt(document.getElementById('puntuacion2').value) || 0,
-                fase: document.getElementById('faseSelect').value
+                fase:        document.getElementById('faseSelect').value,
+                formato:     document.getElementById('formatoSelect').value
             };
             socket.emit('actualizar', datos);
         });

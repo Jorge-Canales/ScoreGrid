@@ -12,12 +12,12 @@ app.use(express.static(path.join(__dirname)));
 
 // Estado inicial del marcador
 let marcador = {
-    torneo: 'Nombre del Torneo',
     jugador1: 'Jugador 1',
     jugador2: 'Jugador 2',
     puntuacion1: 0,
     puntuacion2: 0,
-    fase: 'Cuartos de final'
+    fase: 'Cuartos de final',
+    formato: 'Best of 3'
 };
 
 // Cuando un cliente se conecta
