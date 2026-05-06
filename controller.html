@@ -222,9 +222,9 @@
         <div class="grupo">
             <label>Puntuaciones</label>
             <div class="puntuaciones">
-                <input type="number" id="puntuacion1" placeholder="0" min="0" max="99">
+                <input type="number" id="puntuacion1" placeholder="0" min="0" max="99" value="0">
                 <span class="vs-text">—</span>
-                <input type="number" id="puntuacion2" placeholder="0" min="0" max="99">
+                <input type="number" id="puntuacion2" placeholder="0" min="0" max="99" value="0">
             </div>
         </div>
 
@@ -264,7 +264,8 @@
             2. En OBS, añade una fuente <strong>"Navegador"</strong> con URL:<br>
             <code>http://localhost:3000/overlay.html</code><br>
             3. Usa este panel para controlar todo al instante<br>
-            4. Consejo: pon el overlay sobre un fondo oscuro
+            4. Consejo: pon el overlay sobre un fondo oscuro<br>
+            <strong>Puntuaciones máximas según formato:</strong> Bo1 → 1 | Bo3 → 2 | Bo5 → 3
         </div>
     </div>
 
@@ -272,6 +273,46 @@
         const socket = io();
         const estadoEl = document.getElementById('estadoConexion');
 
+        // Elementos
+        const formatoSelect = document.getElementById('formatoSelect');
+        const puntuacion1Input = document.getElementById('puntuacion1');
+        const puntuacion2Input = document.getElementById('puntuacion2');
+
+        // Función que devuelve el máximo permitido según el formato seleccionado
+        function getMaxScoreByFormat(formatoValue) {
+            if (formatoValue === 'Best of 1') return 1;
+            if (formatoValue === 'Best of 3') return 2;
+            if (formatoValue === 'Best of 5') return 3;
+            // Si es "Ninguno" o cualquier otro valor, sin límite (99)
+            return 99;
+        }
+
+        // Función para actualizar el atributo max de los inputs de puntuación
+        function updateScoreLimits() {
+            const formato = formatoSelect.value;
+            const maxScore = getMaxScoreByFormat(formato);
+            puntuacion1Input.max = maxScore;
+            puntuacion2Input.max = maxScore;
+
+            // Si el valor actual supera el nuevo máximo, lo ajustamos automáticamente
+            let p1 = parseInt(puntuacion1Input.value) || 0;
+            let p2 = parseInt(puntuacion2Input.value) || 0;
+            if (p1 > maxScore) {
+                puntuacion1Input.value = maxScore;
+            }
+            if (p2 > maxScore) {
+                puntuacion2Input.value = maxScore;
+            }
+        }
+
+        // Escuchar cambios en el select de formato
+        formatoSelect.addEventListener('change', () => {
+            updateScoreLimits();
+            // También actualizar el marcador automáticamente? No, solo ajustamos límites.
+            // Opcional: se podría enviar automáticamente, pero mejor dejar que el usuario haga clic.
+        });
+
+        // Conexión Socket
         socket.on('connect', () => {
             estadoEl.textContent = 'Conectado - Los cambios se aplican al instante';
             estadoEl.className = 'estado conectado';
@@ -290,19 +331,23 @@
             document.getElementById('puntuacion2').value = datos.puntuacion2;
             document.getElementById('faseSelect').value = datos.fase;
             if (datos.formato !== undefined) {
-                document.getElementById('formatoSelect').value = datos.formato;
+                formatoSelect.value = datos.formato;
             }
+            // Aplicar límites según el formato que llegó
+            updateScoreLimits();
         });
 
         // Enviar actualización al hacer clic
         document.getElementById('btnActualizar').addEventListener('click', () => {
+            // Antes de enviar, nos aseguramos de que las puntuaciones no excedan el límite actual
+            updateScoreLimits();
             const datos = {
                 jugador1:    document.getElementById('jugador1').value    || 'Jugador 1',
                 jugador2:    document.getElementById('jugador2').value    || 'Jugador 2',
-                puntuacion1: parseInt(document.getElementById('puntuacion1').value) || 0,
-                puntuacion2: parseInt(document.getElementById('puntuacion2').value) || 0,
+                puntuacion1: parseInt(puntuacion1Input.value) || 0,
+                puntuacion2: parseInt(puntuacion2Input.value) || 0,
                 fase:        document.getElementById('faseSelect').value,
-                formato:     document.getElementById('formatoSelect').value
+                formato:     formatoSelect.value
             };
             socket.emit('actualizar', datos);
         });
@@ -315,6 +360,9 @@
                 }
             });
         });
+
+        // Inicializar límites al cargar la página (por si formato por defecto es Bo3 -> max 2)
+        updateScoreLimits();
     </script>
 </body>
 </html>

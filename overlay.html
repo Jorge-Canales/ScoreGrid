@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>ScoreGrid - Overlay</title>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
@@ -28,6 +28,7 @@
             flex-direction: column;
             align-items: center;
             gap: 0;
+            pointer-events: none;
         }
 
         /* ── RECTÁNGULO PRINCIPAL ── */
@@ -44,9 +45,10 @@
             gap: 0;
             position: relative;
             overflow: hidden;
+            transition: background 0.2s ease;
         }
 
-        /* Sutil brillo interior para darle profundidad */
+        /* Brillo interior fijo */
         .marcador-rect::before {
             content: "";
             position: absolute;
@@ -56,9 +58,68 @@
                 transparent 55%,
                 rgba(0,0,0,0.15) 100%);
             pointer-events: none;
+            z-index: 2;
         }
 
-        /* ── JUGADORES ── */
+        /* Capa de inundación (color ganador + ondas) */
+        .marcador-rect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--winner-color, #C20A4D);
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 0px,
+                rgba(255, 255, 255, 0.2) 10px,
+                rgba(255, 255, 255, 0.4) 10px,
+                rgba(255, 255, 255, 0.4) 20px,
+                rgba(255, 255, 255, 0.1) 20px,
+                rgba(255, 255, 255, 0.1) 30px
+            );
+            background-size: 42px 42px;
+            background-position: 0 0;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Animación de ondas (movimiento del patrón) */
+        @keyframes waveMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 84px 84px; }
+        }
+
+        /* Clase que activa la inundación */
+        .marcador-rect.victory-animation::after {
+            transform: scaleX(1);
+            animation: waveMove 0.8s linear infinite;
+        }
+
+        /* Dirección hacia la izquierda (ganador derecho) */
+        .marcador-rect.winner-right::after {
+            transform-origin: right;
+        }
+
+        /* Contenido por encima de la inundación */
+        .marcador-rect > * {
+            position: relative;
+            z-index: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        /* Fade out de textos y logo durante la victoria */
+        .marcador-rect.victory-animation .jugador,
+        .marcador-rect.victory-animation .puntuacion,
+        .marcador-rect.victory-animation .logo-centro {
+            opacity: 0;
+        }
+
+        /* Estilos de texto normales */
         .jugador {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 28px;
@@ -69,15 +130,9 @@
             white-space: nowrap;
         }
 
-        .jugador.izquierda {
-            text-align: left;
-        }
+        .jugador.izquierda { text-align: left; }
+        .jugador.derecha { text-align: right; }
 
-        .jugador.derecha {
-            text-align: right;
-        }
-
-        /* ── PUNTUACIONES ── */
         .puntuacion {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 36px;
@@ -88,7 +143,6 @@
             letter-spacing: 1px;
         }
 
-        /* ── LOGO CENTRAL ── */
         .logo-centro {
             display: flex;
             align-items: center;
@@ -98,7 +152,6 @@
             flex-shrink: 0;
             margin: 0 10px;
         }
-
         .logo-centro img {
             width: 100%;
             height: 100%;
@@ -107,7 +160,7 @@
             transform: scale(2);
         }
 
-        /* ── BARRA INFERIOR: FASE + FORMATO ── */
+        /* Barra inferior */
         .fase-bar {
             display: flex;
             align-items: center;
@@ -120,10 +173,7 @@
             border-radius: 0 0 4px 4px;
             padding: 4px 20px;
         }
-
-        .fase,
-        .separador,
-        .formato {
+        .fase, .separador, .formato {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 14px;
             font-weight: 700;
@@ -131,71 +181,365 @@
             text-transform: uppercase;
             letter-spacing: 2px;
         }
-
-        .separador {
-            color: #828282;
-            font-weight: 400;
-        }
-
-        /* Ocultar separador y formato cuando el formato esté vacío */
+        .separador { color: #828282; font-weight: 400; }
         .fase-bar.sin-formato .separador,
-        .fase-bar.sin-formato .formato {
-            display: none;
+        .fase-bar.sin-formato .formato { display: none; }
+
+        /* Pantalla WINNER permanente */
+        .winner-message {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            width: 100%;
+            text-transform: uppercase;
+            background: transparent;
+            opacity: 0;
+            animation: fadeInWinner 0.5s ease-out forwards;
+        }
+        @keyframes fadeInWinner {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .marcador-rect.winner-layout {
+            justify-content: center;
+            padding: 0 20px;
+        }
+        .marcador-rect.winner-layout .winner-message {
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
     <div class="marcador-wrapper">
-
-        <div class="marcador-rect">
-            <span class="jugador izquierda" id="jugador1">Jugador 1</span>
-            <span class="puntuacion" id="puntuacion1">0</span>
-
-            <div class="logo-centro">
-                <img src="/image/logo.png" alt="ScoreGrid Logo">
-            </div>
-
-            <span class="puntuacion" id="puntuacion2">0</span>
-            <span class="jugador derecha" id="jugador2">Jugador 2</span>
-        </div>
-
+        <div class="marcador-rect" id="marcadorRect"></div>
         <div class="fase-bar" id="faseBar">
             <span class="fase" id="fase">Cuartos de Final</span>
             <span class="separador">•</span>
             <span class="formato" id="formato">Best of 3</span>
         </div>
-
     </div>
 
     <script>
         const socket = io();
+        const marcadorRect = document.getElementById('marcadorRect');
+        const faseEl = document.getElementById('fase');
+        const formatoEl = document.getElementById('formato');
+        const faseBar = document.getElementById('faseBar');
 
-        const jugador1    = document.getElementById('jugador1');
-        const jugador2    = document.getElementById('jugador2');
-        const puntuacion1 = document.getElementById('puntuacion1');
-        const puntuacion2 = document.getElementById('puntuacion2');
-        const faseEl      = document.getElementById('fase');
-        const formatoEl   = document.getElementById('formato');
-        const faseBar     = document.getElementById('faseBar');
+        // Estados
+        let isWinnerMode = false;
+        let transitionTimer = null;      // Timer que espera 2 segundos antes de iniciar animación
+        let animationTimer = null;       // Timer que espera que termine la animación (0.8s) para mostrar WINNER
+        let pendingWinnerData = null;
+        let currentNormalData = {
+            jugador1: 'Jugador 1',
+            jugador2: 'Jugador 2',
+            puntuacion1: 0,
+            puntuacion2: 0,
+            fase: 'Cuartos de Final',
+            formato: 'Best of 3'
+        };
 
-        socket.on('estadoInicial',     (datos) => actualizarMarcador(datos));
-        socket.on('estadoActualizado', (datos) => actualizarMarcador(datos));
-
-        function actualizarMarcador(datos) {
-            jugador1.textContent    = datos.jugador1;
-            jugador2.textContent    = datos.jugador2;
-            puntuacion1.textContent = datos.puntuacion1;
-            puntuacion2.textContent = datos.puntuacion2;
-            faseEl.textContent      = datos.fase;
-            formatoEl.textContent   = datos.formato || '';
-
-            // Ocultar separador si no hay formato
-            if (!datos.formato || datos.formato.trim() === '') {
-                faseBar.classList.add('sin-formato');
-            } else {
-                faseBar.classList.remove('sin-formato');
+        // ---- Utilidades ----
+        function getWinningTarget(formatoStr) {
+            if (!formatoStr || formatoStr.trim() === '') return null;
+            const lower = formatoStr.toLowerCase();
+            if (lower.includes('best of 1') || lower === 'bo1') return 1;
+            if (lower.includes('best of 3') || lower === 'bo3') return 2;
+            if (lower.includes('best of 5') || lower === 'bo5') return 3;
+            const match = formatoStr.match(/\d+/);
+            if (match) {
+                const best = parseInt(match[0], 10);
+                if (best === 1) return 1;
+                if (best === 3) return 2;
+                if (best === 5) return 3;
             }
+            return null;
         }
+
+        function detectWinner(p1, p2, target) {
+            if (!target) return null;
+            if (p1 >= target && p1 > p2) return 1;
+            if (p2 >= target && p2 > p1) return 2;
+            return null;
+        }
+
+        // Construcción UI normal
+        function buildNormalUI(data) {
+            marcadorRect.innerHTML = '';
+            marcadorRect.classList.remove('winner-layout', 'victory-animation', 'winner-right');
+            marcadorRect.style.background = "linear-gradient(90deg, #0713B8 0%, #C20A4D 100%)";
+            marcadorRect.style.removeProperty('--winner-color');
+            const spanJ1 = document.createElement('span');
+            spanJ1.className = 'jugador izquierda';
+            spanJ1.id = 'jugador1';
+            spanJ1.textContent = data.jugador1;
+            const spanP1 = document.createElement('span');
+            spanP1.className = 'puntuacion';
+            spanP1.id = 'puntuacion1';
+            spanP1.textContent = data.puntuacion1;
+            const logoDiv = document.createElement('div');
+            logoDiv.className = 'logo-centro';
+            const logoImg = document.createElement('img');
+            logoImg.src = '/image/logo.png';
+            logoImg.alt = 'ScoreGrid Logo';
+            logoDiv.appendChild(logoImg);
+            const spanP2 = document.createElement('span');
+            spanP2.className = 'puntuacion';
+            spanP2.id = 'puntuacion2';
+            spanP2.textContent = data.puntuacion2;
+            const spanJ2 = document.createElement('span');
+            spanJ2.className = 'jugador derecha';
+            spanJ2.id = 'jugador2';
+            spanJ2.textContent = data.jugador2;
+            marcadorRect.appendChild(spanJ1);
+            marcadorRect.appendChild(spanP1);
+            marcadorRect.appendChild(logoDiv);
+            marcadorRect.appendChild(spanP2);
+            marcadorRect.appendChild(spanJ2);
+        }
+
+        function updateNormalUI(data) {
+            const j1 = document.getElementById('jugador1');
+            const j2 = document.getElementById('jugador2');
+            const p1 = document.getElementById('puntuacion1');
+            const p2 = document.getElementById('puntuacion2');
+            if (j1) j1.textContent = data.jugador1;
+            if (j2) j2.textContent = data.jugador2;
+            if (p1) p1.textContent = data.puntuacion1;
+            if (p2) p2.textContent = data.puntuacion2;
+        }
+
+        function updateFaseBar(fase, formato) {
+            faseEl.textContent = fase;
+            formatoEl.textContent = formato || '';
+            if (!formato || formato.trim() === '') faseBar.classList.add('sin-formato');
+            else faseBar.classList.remove('sin-formato');
+        }
+
+        // Reset completo (salir de modo ganador y animaciones)
+        function resetToNormalMode(newData) {
+            if (transitionTimer) { clearTimeout(transitionTimer); transitionTimer = null; }
+            if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
+            marcadorRect.classList.remove('victory-animation', 'winner-layout', 'winner-right');
+            marcadorRect.style.removeProperty('--winner-color');
+            marcadorRect.style.background = "linear-gradient(90deg, #0713B8 0%, #C20A4D 100%)";
+            if (isWinnerMode || marcadorRect.classList.contains('winner-layout')) {
+                buildNormalUI(newData);
+                isWinnerMode = false;
+                pendingWinnerData = null;
+            } else {
+                if (document.getElementById('jugador1')) updateNormalUI(newData);
+                else buildNormalUI(newData);
+                isWinnerMode = false;
+                pendingWinnerData = null;
+            }
+            currentNormalData = { ...newData };
+        }
+
+        // Mostrar pantalla WINNER permanente (sin animaciones posteriores)
+        function applyPermanentWinner(winnerId, winnerName, faseActual, formatoActual) {
+            isWinnerMode = true;
+            marcadorRect.innerHTML = '';
+            marcadorRect.classList.add('winner-layout');
+            marcadorRect.classList.remove('victory-animation', 'winner-right');
+            const winnerColor = (winnerId === 1) ? '#0713B8' : '#C20A4D';
+            marcadorRect.style.background = winnerColor;
+            const winnerSpan = document.createElement('div');
+            winnerSpan.className = 'winner-message';
+            winnerSpan.textContent = `WINNER ${winnerName}`;
+            marcadorRect.appendChild(winnerSpan);
+            updateFaseBar(faseActual, formatoActual);
+            currentNormalData = { ...currentNormalData, fase: faseActual, formato: formatoActual };
+        }
+
+        // Inicia el proceso de victoria: espera 2 segundos, luego hace inundación + fade out, luego WINNER
+        function startVictorySequence(winnerId, winnerName, winnerColor, freshData, fase, formato) {
+            // Guardar datos para cuando termine la animación
+            pendingWinnerData = { winnerId, winnerName, freshData, fase, formato };
+
+            // Timer de 2 segundos antes de iniciar la animación visual
+            transitionTimer = setTimeout(() => {
+                // Aplicar dirección según ganador
+                if (winnerId === 2) {
+                    marcadorRect.classList.add('winner-right');
+                } else {
+                    marcadorRect.classList.remove('winner-right');
+                }
+                // Establecer variable de color
+                marcadorRect.style.setProperty('--winner-color', winnerColor);
+                // Activar animación (relleno + ondas + fade out de textos)
+                marcadorRect.classList.add('victory-animation');
+
+                // La animación CSS dura 0.8s, luego de eso mostramos el mensaje WINNER
+                animationTimer = setTimeout(() => {
+                    // Finalizada la inundación, mostrar pantalla WINNER permanente
+                    if (pendingWinnerData) {
+                        applyPermanentWinner(pendingWinnerData.winnerId, pendingWinnerData.winnerName, pendingWinnerData.fase, pendingWinnerData.formato);
+                    }
+                    // Limpiar timers y datos temporales
+                    if (transitionTimer) transitionTimer = null;
+                    if (animationTimer) animationTimer = null;
+                    pendingWinnerData = null;
+                }, 800); // duración de la animación de relleno (coincide con transition)
+                
+                transitionTimer = null;
+            }, 2000); // espera 2 segundos antes de inundar
+        }
+
+        // Función principal de actualización desde Socket
+        function procesarActualizacion(datos) {
+            updateFaseBar(datos.fase, datos.formato || '');
+
+            const target = getWinningTarget(datos.formato);
+            const p1 = Number(datos.puntuacion1);
+            const p2 = Number(datos.puntuacion2);
+            const winnerId = detectWinner(p1, p2, target);
+            const freshData = {
+                jugador1: datos.jugador1,
+                jugador2: datos.jugador2,
+                puntuacion1: p1,
+                puntuacion2: p2,
+                fase: datos.fase,
+                formato: datos.formato
+            };
+
+            // Modo WINNER permanente activo
+            if (isWinnerMode) {
+                if (winnerId === null) {
+                    resetToNormalMode(freshData);
+                    if (document.getElementById('jugador1')) updateNormalUI(freshData);
+                    else buildNormalUI(freshData);
+                } else {
+                    const currentWinnerName = (winnerId === 1) ? datos.jugador1 : datos.jugador2;
+                    const msgElem = marcadorRect.querySelector('.winner-message');
+                    let shown = msgElem ? msgElem.textContent.replace('WINNER ', '') : '';
+                    if (shown !== currentWinnerName) {
+                        resetToNormalMode(freshData);
+                        procesarActualizacion(datos);
+                    }
+                }
+                return;
+            }
+
+            // Si hay un timer de transición o animación en curso (ya se detectó ganador antes)
+            if (transitionTimer !== null || animationTimer !== null) {
+                // Si el nuevo estado ya no tiene ganador, cancelar todo y reset
+                if (winnerId === null) {
+                    if (transitionTimer) clearTimeout(transitionTimer);
+                    if (animationTimer) clearTimeout(animationTimer);
+                    transitionTimer = null;
+                    animationTimer = null;
+                    marcadorRect.classList.remove('victory-animation', 'winner-right');
+                    marcadorRect.style.removeProperty('--winner-color');
+                    pendingWinnerData = null;
+                    if (document.getElementById('jugador1')) updateNormalUI(freshData);
+                    else buildNormalUI(freshData);
+                    currentNormalData = { ...freshData };
+                    return;
+                } else {
+                    // Mismo ganador? Verificar si es el mismo jugador
+                    const newWinnerName = (winnerId === 1) ? datos.jugador1 : datos.jugador2;
+                    if (pendingWinnerData && pendingWinnerData.winnerName === newWinnerName && pendingWinnerData.winnerId === winnerId) {
+                        // Mismo ganador, solo actualizamos los datos visuales del marcador (por si cambian nombres)
+                        if (document.getElementById('jugador1')) updateNormalUI(freshData);
+                        else buildNormalUI(freshData);
+                        currentNormalData = { ...freshData };
+                        if (pendingWinnerData) pendingWinnerData.freshData = freshData;
+                    } else {
+                        // Cambió el ganador -> reiniciar proceso
+                        if (transitionTimer) clearTimeout(transitionTimer);
+                        if (animationTimer) clearTimeout(animationTimer);
+                        transitionTimer = null;
+                        animationTimer = null;
+                        marcadorRect.classList.remove('victory-animation', 'winner-right');
+                        marcadorRect.style.removeProperty('--winner-color');
+                        pendingWinnerData = null;
+                        procesarActualizacion(datos);
+                    }
+                    return;
+                }
+            }
+
+            // Estado normal sin ganador
+            if (winnerId === null) {
+                if (document.getElementById('jugador1')) updateNormalUI(freshData);
+                else buildNormalUI(freshData);
+                currentNormalData = { ...freshData };
+                return;
+            }
+
+            // --- HAY GANADOR y no hay ningún proceso activo: iniciar secuencia ---
+            const winnerName = (winnerId === 1) ? datos.jugador1 : datos.jugador2;
+            const winnerColor = (winnerId === 1) ? '#0713B8' : '#C20A4D';
+            // Asegurar que la UI muestre el marcador final (con la puntuación ganadora)
+            if (document.getElementById('jugador1')) updateNormalUI(freshData);
+            else buildNormalUI(freshData);
+            currentNormalData = { ...freshData };
+            // Arrancar secuencia: esperar 2s, luego inundación+fade, luego WINNER
+            startVictorySequence(winnerId, winnerName, winnerColor, freshData, datos.fase, datos.formato);
+        }
+
+        // Socket events
+        socket.on('estadoInicial', (datos) => {
+            if (transitionTimer) clearTimeout(transitionTimer);
+            if (animationTimer) clearTimeout(animationTimer);
+            transitionTimer = null;
+            animationTimer = null;
+            isWinnerMode = false;
+            pendingWinnerData = null;
+            marcadorRect.classList.remove('victory-animation', 'winner-layout', 'winner-right');
+            marcadorRect.style.removeProperty('--winner-color');
+            const initData = {
+                jugador1: datos.jugador1 || 'Jugador 1',
+                jugador2: datos.jugador2 || 'Jugador 2',
+                puntuacion1: datos.puntuacion1 ?? 0,
+                puntuacion2: datos.puntuacion2 ?? 0,
+                fase: datos.fase || 'Cuartos de Final',
+                formato: datos.formato || 'Best of 3'
+            };
+            currentNormalData = { ...initData };
+            buildNormalUI(initData);
+            updateFaseBar(initData.fase, initData.formato);
+            const targetInit = getWinningTarget(initData.formato);
+            const winnerInit = detectWinner(initData.puntuacion1, initData.puntuacion2, targetInit);
+            if (winnerInit !== null && !isWinnerMode && transitionTimer === null && animationTimer === null) {
+                const winnerNameInit = (winnerInit === 1) ? initData.jugador1 : initData.jugador2;
+                const winnerColorInit = (winnerInit === 1) ? '#0713B8' : '#C20A4D';
+                startVictorySequence(winnerInit, winnerNameInit, winnerColorInit, initData, initData.fase, initData.formato);
+            }
+        });
+
+        socket.on('estadoActualizado', (datos) => {
+            const datosProcesados = {
+                jugador1: datos.jugador1,
+                jugador2: datos.jugador2,
+                puntuacion1: datos.puntuacion1 ?? 0,
+                puntuacion2: datos.puntuacion2 ?? 0,
+                fase: datos.fase,
+                formato: datos.formato
+            };
+            procesarActualizacion(datosProcesados);
+        });
+
+        // Placeholder inicial
+        (function init() {
+            const defaultData = {
+                jugador1: 'Jugador 1',
+                jugador2: 'Jugador 2',
+                puntuacion1: 0,
+                puntuacion2: 0,
+                fase: 'Cuartos de Final',
+                formato: 'Best of 3'
+            };
+            buildNormalUI(defaultData);
+            updateFaseBar(defaultData.fase, defaultData.formato);
+            currentNormalData = { ...defaultData };
+        })();
     </script>
 </body>
 </html>
